@@ -45,9 +45,9 @@ on:
         required: true
         type: string
 
-      tweak_url:
-        description: "URL to the YouTube Plus tweak file"
-        default: ""
+      tweak_version:
+        description: "Version label used for the in-app version string. Source is always built from this repo."
+        default: "5.2.1-beta"
         required: true
         type: string
 
@@ -83,7 +83,7 @@ jobs:
       enable_ryd: ${{ inputs.enable_ryd }}
       enable_ytabc: ${{ inputs.enable_ytabc }}
       enable_demc: ${{ inputs.enable_demc }}
-      tweak_url: ${{ inputs.tweak_url }}
+      tweak_version: ${{ inputs.tweak_version }}
 
   package:
     name: Package IPA (Beta)
