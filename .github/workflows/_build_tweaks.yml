@@ -103,6 +103,14 @@ jobs:
             cd $THEOS/include && git clone --quiet --depth=1 https://github.com/PoomSmart/PSHeader.git
           fi
 
+      - name: Install RootHide SDK headers
+        run: |
+          if [ ! -f "$THEOS/include/roothide.h" ]; then
+            tmpdir=$(mktemp -d)
+            git clone --quiet --depth=1 https://github.com/roothide/libroothide.git "$tmpdir/libroothide"
+            cp "$tmpdir/libroothide"/*.h "$THEOS/include/"
+          fi
+
       - name: Build YTLite from source
         run: |
           VERSION="${{ inputs.tweak_version }}"
