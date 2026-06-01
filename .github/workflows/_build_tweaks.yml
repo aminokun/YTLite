@@ -111,6 +111,23 @@ jobs:
             cp "$tmpdir/libroothide"/*.h "$THEOS/include/"
           fi
 
+      - name: Stage YouTubeHeader and protobuf as project siblings
+        run: |
+          # YTLite source uses "../YouTubeHeader/..." and "../protobuf/objectivec/..."
+          # relative imports, so these dirs must exist at the parent of $GITHUB_WORKSPACE.
+          parent_dir="$(dirname "$GITHUB_WORKSPACE")"
+
+          # YouTubeHeader: symlink to the canonical $THEOS/include location.
+          ln -sfn "$THEOS/include/YouTubeHeader" "$parent_dir/YouTubeHeader"
+
+          # protobuf: sparse-checkout just objectivec/ from Google's protobuf.
+          if [ ! -d "$parent_dir/protobuf" ]; then
+            git clone --quiet -n --depth=1 --filter=tree:0 https://github.com/protocolbuffers/protobuf.git "$parent_dir/protobuf"
+            cd "$parent_dir/protobuf"
+            git sparse-checkout set --no-cone objectivec
+            git checkout
+          fi
+
       - name: Build YTLite from source
         run: |
           VERSION="${{ inputs.tweak_version }}"
