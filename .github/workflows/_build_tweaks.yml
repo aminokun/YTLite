@@ -109,6 +109,10 @@ jobs:
             tmpdir=$(mktemp -d)
             git clone --quiet --depth=1 https://github.com/roothide/libroothide.git "$tmpdir/libroothide"
             cp "$tmpdir/libroothide"/*.h "$THEOS/include/"
+            # For non-roothide builds (sideload/rootful/rootless), use stub.h's
+            # static inline no-op implementations instead of the real roothide.h's
+            # external declarations (which would require linking libroothide.dylib).
+            cp "$tmpdir/libroothide/stub.h" "$THEOS/include/roothide.h"
           fi
 
       - name: Stage YouTubeHeader and protobuf as project siblings
@@ -121,8 +125,9 @@ jobs:
           ln -sfn "$THEOS/include/YouTubeHeader" "$parent_dir/YouTubeHeader"
 
           # protobuf: sparse-checkout just objectivec/ from Google's protobuf.
+          # Pin to v25.9 — newer (v34+) removed GPBUnknownFieldSet.h which YTNativeShare.x still imports.
           if [ ! -d "$parent_dir/protobuf" ]; then
-            git clone --quiet -n --depth=1 --filter=tree:0 https://github.com/protocolbuffers/protobuf.git "$parent_dir/protobuf"
+            git clone --quiet -n --depth=1 --filter=tree:0 --branch v25.9 https://github.com/protocolbuffers/protobuf.git "$parent_dir/protobuf"
             cd "$parent_dir/protobuf"
             git sparse-checkout set --no-cone objectivec
             git checkout
@@ -132,7 +137,10 @@ jobs:
         run: |
           VERSION="${{ inputs.tweak_version }}"
           [ -z "$VERSION" ] && VERSION="5.2.1"
-          make clean package DEBUG=0 FINALPACKAGE=1 PACKAGE_VERSION="$VERSION"
+          # -Wno-error=misleading-indentation: upstream's Sideloading.x:22-25 has
+          # a real misleading-indentation warning that -Werror would block on.
+          make clean package DEBUG=0 FINALPACKAGE=1 PACKAGE_VERSION="$VERSION" \
+            ADDITIONAL_CFLAGS="-Wno-error=misleading-indentation"
           mv packages/com.dvntm.ytlite_*_iphoneos-arm.deb ytplus.deb
 
       - name: Clone YouPiP
